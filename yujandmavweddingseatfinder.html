@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yujin & Mav's Wedding — Find Your Seat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --white:      #F9F8F6;
+      --white-pure: #FFFFFF;
+      --black:      #0A0A0A;
+      --black-soft: #1C1C1C;
+      --grey-50:    #F5F4F2;
+      --grey-100:   #ECEAE7;
+      --grey-200:   #DEDAD5;
+      --grey-300:   #C4C0BA;
+      --grey-500:   #8A8680;
+      --grey-700:   #4A4844;
+      --text:       #0A0A0A;
+      --text-muted: #6A6762;
+      --text-faint: #C4C0BA;
+    }
+
+    body {
+      background: var(--white);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+    }
+
+    /* Subtle crosshatch texture on white bg */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,0.018) 28px, rgba(0,0,0,0.018) 29px),
+        repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(0,0,0,0.018) 28px, rgba(0,0,0,0.018) 29px);
+      pointer-events: none;
+    }
+
+    .container { width: 100%; max-width: 520px; position: relative; z-index: 1; padding: 0 1.25rem 3rem; }
+    .container > header { margin-left: -1.25rem; margin-right: -1.25rem; }
+
+    /* ── HEADER (black) ──────────────────────────────────────────────────────── */
+    header {
+      background: var(--black);
+      text-align: center;
+      padding: 4rem 2rem 3rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .orn-row {
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+      margin-bottom: 1.6rem;
+    }
+    .orn-line    { flex: 0 0 52px; height: 1px; background: rgba(255,255,255,0.18); }
+    .orn-diamond { width: 7px; height: 7px; background: #fff; transform: rotate(45deg); }
+
+    .event-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 1rem;
+    }
+
+    .couple-names {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2.6rem, 7.5vw, 4rem);
+      font-weight: 300;
+      font-style: italic;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+      margin-bottom: 0.9rem;
+    }
+    .amp { font-weight: 400; color: rgba(255,255,255,0.28); margin: 0 0.3em; }
+
+    .sub-orn-row {
+      display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+      margin-bottom: 0.9rem;
+    }
+    .sub-line { flex: 0 0 28px; height: 1px; background: rgba(255,255,255,0.15); }
+    .sub-dot  { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.22); }
+
+    .subtitle {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: rgba(255,255,255,0.42);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── SEARCH ──────────────────────────────────────────────────────────────── */
+    .search-outer { position: relative; margin-bottom: 0.5rem; }
+
+    .search-icon {
+      position: absolute; left: 1.1rem; top: 50%;
+      transform: translateY(-50%);
+      color: var(--grey-300); pointer-events: none; display: flex;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 1.05rem 2.8rem 1.05rem 3rem;
+      background: var(--white-pure);
+      border: 1.5px solid var(--black);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 300;
+      outline: none;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    #searchInput::placeholder { color: var(--text-faint); }
+    #searchInput:focus {
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .clear-btn {
+      position: absolute; right: 0.9rem; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--grey-300); cursor: pointer;
+      font-size: 0.75rem; padding: 0.3rem; line-height: 1;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .clear-btn.visible { opacity: 1; pointer-events: auto; }
+    .clear-btn:hover { color: var(--text); }
+
+    /* ── SUGGESTIONS ─────────────────────────────────────────────────────────── */
+    #suggestions {
+      background: var(--white-pure);
+      border: 1.5px solid var(--black);
+      border-top: 1px solid var(--grey-100);
+      border-radius: 0 0 8px 8px;
+      overflow: hidden; display: none; margin-top: -2px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    #suggestions.open { display: block; }
+
+    .sug-item {
+      padding: 0.72rem 1.1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--grey-50);
+      transition: background 0.1s, color 0.1s;
+    }
+    .sug-item:last-child { border-bottom: none; }
+    .sug-item:hover { background: var(--grey-50); color: var(--text); }
+    .sug-item mark { background: none; color: var(--black); font-weight: 500; }
+
+    /* ── STATES ──────────────────────────────────────────────────────────────── */
+    .state { display: none; }
+    .state.active { display: block; }
+
+    #stateIdle {
+      text-align: center; padding: 2.5rem 0 1rem;
+      color: var(--text-faint); font-size: 0.8rem; font-weight: 300; letter-spacing: 0.03em;
+    }
+
+    #stateLoading {
+      text-align: center; padding: 3.5rem 0;
+      color: var(--text-muted); font-size: 0.855rem; font-weight: 300;
+    }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid var(--grey-200);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT CARD ─────────────────────────────────────────────────────────── */
+    #stateResult   { animation: fadeUp 0.3s ease; }
+    #stateNotFound { animation: fadeUp 0.25s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card {
+      background: var(--white-pure);
+      border: 1.5px solid var(--black);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 40px rgba(0,0,0,0.13), 4px 4px 0 var(--black);
+    }
+
+    /* BLACK BANNER */
+    .banner {
+      background: var(--black);
+      padding: 2rem 2rem 1.85rem;
+      text-align: center;
+      position: relative;
+    }
+    .banner-top-rule {
+      position: absolute; top: 1.1rem; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 0.45rem;
+    }
+    .btr-line { width: 28px; height: 1px; background: rgba(255,255,255,0.12); }
+    .btr-dot  { width: 3px; height: 3px; background: rgba(255,255,255,0.18); border-radius: 50%; }
+
+    .banner-eyebrow {
+      font-size: 0.56rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 0.65rem;
+    }
+
+    #tableDisplay {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+      font-weight: 400;
+      color: var(--white-pure);
+      line-height: 1.15;
+      margin-bottom: 0.4rem;
+      word-break: break-word;
+    }
+
+    #tableSubLabel {
+      font-size: 0.6rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      min-height: 1em;
+    }
+
+    /* WHITE CARD BODY */
+    .card-body {
+      padding: 1.85rem 2rem;
+      background: var(--white-pure);
+    }
+
+    /* Thin rule between banner and body */
+    .card-divider {
+      height: 2px;
+      background: var(--black);
+    }
+
+    .section-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--grey-500);
+      margin-bottom: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 16px;
+      height: 1.5px;
+      background: var(--black);
+      flex-shrink: 0;
+    }
+
+    #tableViz { text-align: center; }
+
+    #guestList { list-style: none; }
+
+    .guest-row {
+      display: flex; align-items: center; gap: 0.85rem;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--grey-200);
+      font-size: 0.875rem; font-weight: 300;
+      color: var(--grey-700);
+    }
+    .guest-row:last-child { border-bottom: none; }
+
+    .guest-dot {
+      flex-shrink: 0;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--grey-300);
+    }
+    .guest-row.is-you .guest-dot {
+      width: 5px; height: 5px;
+      background: var(--black);
+    }
+    .guest-row.is-you {
+      color: var(--black);
+      font-weight: 500;
+      background: linear-gradient(to right, rgba(0,0,0,0.035), transparent 60%);
+      margin-left: -2rem;
+      padding-left: 2rem;
+      margin-right: -2rem;
+      padding-right: 2rem;
+      border-left: 3px solid var(--black);
+      border-bottom-color: var(--grey-200);
+    }
+    .you-tag {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--white-pure); background: var(--black);
+      padding: 0.2rem 0.55rem; border-radius: 3px;
+    }
+
+    /* ── NOT FOUND ───────────────────────────────────────────────────────────── */
+    #stateNotFound {
+      text-align: center; padding: 2.5rem 1rem;
+    }
+    .nf-icon  { font-size: 1.4rem; color: var(--grey-300); margin-bottom: 1rem; }
+    .nf-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem; font-weight: 400; margin-bottom: 0.4rem;
+    }
+    .nf-msg {
+      font-size: 0.82rem; color: var(--text-muted); font-weight: 300; line-height: 1.65;
+    }
+
+    /* ── ERROR ───────────────────────────────────────────────────────────────── */
+    #stateError {
+      padding: 1.5rem;
+      background: #FDFAFA;
+      border: 1px solid #E0D4D4;
+      border-radius: 8px;
+      animation: fadeUp 0.25s ease;
+    }
+    .err-title { color: #8B3030; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+    .err-body  { font-size: 0.8rem; color: var(--text-muted); font-weight: 300; line-height: 1.7; }
+    .err-body code {
+      background: var(--grey-100); padding: 0.1em 0.35em;
+      border-radius: 3px; font-size: 0.9em; color: var(--black);
+    }
+
+    /* ── FOOTER (black strip — mirrors header) ───────────────────────────────── */
+    footer {
+      width: calc(100% + 2.5rem);
+      margin-left: -1.25rem;
+      margin-right: -1.25rem;
+      margin-top: 3rem;
+      background: var(--black);
+      color: rgba(255,255,255,0.32);
+      padding: 1.75rem 2rem;
+      text-align: center;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+    }
+    .footer-orn {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: rgba(255,255,255,0.16);
+      font-size: 0.48rem;
+      letter-spacing: 0.45em;
+    }
+
+    @media (max-width: 520px) {
+      .container { padding: 0 0.875rem; }
+      .container > header { margin-left: -0.875rem; margin-right: -0.875rem; }
+      header { padding: 2.75rem 1.5rem 2.25rem; }
+      .couple-names { font-size: 2rem; }
+      .banner { padding: 1.75rem 1.25rem 1.5rem; }
+      .banner-top-rule { display: none; }
+      #tableDisplay { font-size: 1.5rem; }
+      #tableSubLabel { font-size: 0.52rem; letter-spacing: 0.2em; }
+      .card-body { padding: 1.25rem 1.25rem; }
+      #tableViz svg { width: 150px; height: 150px; }
+      footer { width: calc(100% + 1.75rem); margin-left: -0.875rem; margin-right: -0.875rem; }
+    }
+
+    @media (max-width: 360px) {
+      header { padding: 2.25rem 1.25rem 2rem; }
+      .couple-names { font-size: 1.75rem; }
+      #tableDisplay { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="orn-row">
+      <span class="orn-line"></span>
+      <span class="orn-diamond"></span>
+      <span class="orn-line"></span>
+    </div>
+    <p class="event-label">Wedding Reception</p>
+    <h1 class="couple-names">
+      Yujin<span class="amp">&amp;</span>Mav
+    </h1>
+    <div class="sub-orn-row">
+      <span class="sub-line"></span>
+      <span class="sub-dot"></span>
+      <span class="sub-dot"></span>
+      <span class="sub-dot"></span>
+      <span class="sub-line"></span>
+    </div>
+    <p class="subtitle">Enter your name to find your table</p>
+  </header>
+
+  <!-- SEARCH -->
+  <div class="search-outer">
+    <span class="search-icon">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+        <line x1="9.8" y1="9.8" x2="13.5" y2="13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Type your name…"
+      autocomplete="off" autocorrect="off"
+      autocapitalize="words" spellcheck="false"
+      aria-label="Search your name"
+    >
+    <button class="clear-btn" id="clearBtn" aria-label="Clear">✕</button>
+  </div>
+
+  <div id="suggestions" role="listbox"></div>
+
+  <!-- LOADING -->
+  <div id="stateLoading" class="state active">
+    <div class="spinner"></div>
+    <p>Loading seating chart…</p>
+  </div>
+
+  <!-- IDLE -->
+  <div id="stateIdle" class="state">
+    <p>Start typing to find your seat</p>
+  </div>
+
+  <!-- RESULT -->
+  <div id="stateResult" class="state">
+    <div class="result-card">
+      <div class="banner">
+        <div class="banner-top-rule">
+          <span class="btr-line"></span><span class="btr-dot"></span><span class="btr-line"></span>
+        </div>
+        <div class="banner-eyebrow">Your Table</div>
+        <div id="tableDisplay">—</div>
+        <div id="tableSubLabel"></div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-body">
+        <div id="tableViz"></div>
+        <div class="section-label" id="seatedWithLabel">Seated With</div>
+        <ul id="guestList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOT FOUND -->
+  <div id="stateNotFound" class="state">
+    <div class="nf-icon">◌</div>
+    <div class="nf-title">Name Not Found</div>
+    <p class="nf-msg">Try a shorter version of your name, or check the spelling.</p>
+  </div>
+
+  <!-- ERROR -->
+  <div id="stateError" class="state">
+    <div class="err-title">Could not load seating data</div>
+    <p class="err-body" id="errBody">
+      The spreadsheet must be publicly viewable. In Google Sheets go to
+      <code>File → Share → Share with others</code>, choose
+      <code>Anyone with the link → Viewer</code> and save.
+    </p>
+  </div>
+
+  <footer>
+    <span class="footer-orn">— ✦ —</span>
+    With love, Yujin &amp; Mav
+  </footer>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const SHEET_ID = '1ACkeZM7jUvHn3lraQHJ8Y4UoxCvzMnGp_4_z970N7Hk';
+const GID      = '545903248';
+const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+// ─────────────────────────────────────────────────────────────────────────────
+
+let tableMap   = {};
+let nameLookup = {};
+let allNames   = [];
+let dataReady  = false;
+
+const $  = id => document.getElementById(id);
+const searchInput   = $('searchInput');
+const clearBtn      = $('clearBtn');
+const suggestionsEl = $('suggestions');
+
+const STATES = ['Loading','Idle','Result','NotFound','Error'];
+function showState(name) {
+  STATES.forEach(s => { const el = $('state'+s); if (el) el.classList.toggle('active', s===name); });
+}
+
+// ── CSV PARSER ────────────────────────────────────────────────────────────────
+function parseRow(line) {
+  const out = []; let cur = '', inQ = false;
+  for (let i = 0; i <= line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if ((c === ',' || c === undefined) && !inQ) { out.push(cur.trim()); cur = ''; }
+    else { cur += (c||''); }
+  }
+  return out;
+}
+
+function buildMap(csvText) {
+  const lines = csvText.replace(/\r/g,'').split('\n').filter(l => l.trim());
+  if (lines.length < 2) return {};
+  const rows   = lines.map(parseRow);
+  const header = rows[0].map(h => h.toLowerCase().trim());
+
+  const col = (...terms) => header.findIndex(h => terms.some(t => h === t || h.includes(t)));
+  const tableCol = col('table','seat number','seating','tbl');
+  const nameCol  = col('name','full name','guest name','attendee','guest');
+  const firstCol = col('first name','first','firstname');
+  const lastCol  = col('last name','last','lastname','surname');
+
+  const map = {};
+  const add = (table, name) => {
+    if (!table || !name) return;
+    if (!map[table]) map[table] = [];
+    if (!map[table].includes(name)) map[table].push(name);
+  };
+
+  if (tableCol >= 0 && (nameCol >= 0 || (firstCol >= 0 && lastCol >= 0))) {
+    rows.slice(1).forEach(row => {
+      const name = nameCol >= 0
+        ? row[nameCol]?.trim()
+        : [row[firstCol]?.trim(), row[lastCol]?.trim()].filter(Boolean).join(' ');
+      add(row[tableCol]?.trim(), name);
+    });
+  } else {
+    const skip = header.some(h => h.includes('table') || h.includes('name') || h === '');
+    rows.slice(skip ? 1 : 0).forEach(row => {
+      const table = row[0]?.trim();
+      row.slice(1).forEach(cell => add(table, cell?.trim()));
+    });
+  }
+  return map;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  showState('Loading');
+  try {
+    const res = await fetch(CSV_URL, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    tableMap = buildMap(text);
+    if (!Object.keys(tableMap).length) {
+      showError('The spreadsheet appears empty or uses an unrecognised format.');
+      return;
+    }
+    nameLookup = {}; allNames = [];
+    Object.entries(tableMap).forEach(([table, names]) => {
+      names.forEach(name => {
+        nameLookup[norm(name)] = { table, original: name };
+        allNames.push(name);
+      });
+    });
+    allNames.sort((a,b) => a.localeCompare(b));
+    dataReady = true;
+    showState('Idle');
+  } catch (err) {
+    showError(
+      err.message.startsWith('HTTP')
+        ? `${err.message} — the sheet may not be public.<br><br>In Google Sheets: <code>File → Share → Anyone with the link → Viewer</code>`
+        : 'Network error: confirm the spreadsheet is publicly viewable, then refresh.'
+    );
+  }
+}
+
+function showError(html) { $('errBody').innerHTML = html; showState('Error'); }
+
+// ── SEARCH LOGIC ──────────────────────────────────────────────────────────────
+function norm(s) { return s.toLowerCase().trim().replace(/\s+/g,' '); }
+
+function findMatch(q) {
+  q = norm(q);
+  if (!q) return null;
+  if (nameLookup[q]) return nameLookup[q];
+  const entries = Object.entries(nameLookup);
+  let hit = entries.find(([k]) => k.startsWith(q+' ') || k.endsWith(' '+q));
+  if (hit) return hit[1];
+  hit = entries.find(([k]) => k.includes(q));
+  return hit ? hit[1] : null;
+}
+
+function getSuggestions(q) {
+  q = norm(q);
+  if (q.length < 2) return [];
+  return allNames.filter(n => norm(n).includes(q)).slice(0,6);
+}
+
+// ── RENDER RESULT ─────────────────────────────────────────────────────────────
+function renderResult({ table, original }) {
+  const people = tableMap[table] || [];
+
+  // Parse table label
+  const numMatch = table.match(/^table\s+(.+)$/i);
+  if (numMatch) {
+    $('tableDisplay').textContent  = numMatch[1];
+    $('tableSubLabel').textContent = table.toUpperCase();
+  } else if (/^\d+$/.test(table)) {
+    $('tableDisplay').textContent  = table;
+    $('tableSubLabel').textContent = `TABLE ${table}`;
+  } else {
+    $('tableDisplay').textContent  = table;
+    $('tableSubLabel').textContent = '';
+  }
+
+  // Viz
+  const vizEl = $('tableViz');
+  if (people.length >= 2 && people.length <= 10) {
+    vizEl.innerHTML = buildViz(people, original);
+    vizEl.style.marginBottom = '1.75rem';
+  } else {
+    vizEl.innerHTML = '';
+    vizEl.style.marginBottom = '0';
+  }
+
+  // Guest list
+  const ul = $('guestList');
+  ul.innerHTML = '';
+  people.forEach(name => {
+    const isYou = norm(name) === norm(original);
+    const li = document.createElement('li');
+    li.className = 'guest-row' + (isYou ? ' is-you' : '');
+    li.innerHTML = `<span class="guest-dot"></span><span>${name}</span>` +
+      (isYou ? '<span class="you-tag">You</span>' : '');
+    ul.appendChild(li);
+  });
+
+  $('seatedWithLabel').textContent =
+    people.length > 1 ? `Seated with ${people.length-1} other${people.length>2?'s':''}` : 'Solo table';
+
+  showState('Result');
+}
+
+// ── CIRCULAR TABLE VIZ (B&W) ──────────────────────────────────────────────────
+function buildViz(people, youName) {
+  const N  = people.length;
+  const SZ = 186;
+  const CX = SZ/2, CY = SZ/2;
+  const TABLE_R = 26;
+  const ORBIT_R = 58;
+  const SEAT_R  = N<=5 ? 20 : N<=7 ? 17 : 14;
+  const FONT_SZ = SEAT_R>=17 ? 9 : 7.5;
+
+  const seats = people.map((name,i) => {
+    const angle = -Math.PI/2 + (i/N)*2*Math.PI;
+    const isYou = norm(name) === norm(youName);
+    const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    return { x: CX+ORBIT_R*Math.cos(angle), y: CY+ORBIT_R*Math.sin(angle), isYou, initials };
+  });
+
+  const svgSeats = seats.map(({x,y,isYou,initials}) => {
+    const cx=x.toFixed(2), cy=y.toFixed(2);
+    // Normal seat: black fill, white initials
+    // You seat: white fill, black border, black initials + dashed ring
+    const fill   = isYou ? '#FFFFFF' : '#0A0A0A';
+    const stroke = '#0A0A0A';
+    const sw     = isYou ? '2' : '0';
+    const tf     = isYou ? '#0A0A0A' : '#FFFFFF';
+    const fw     = isYou ? '600'     : '400';
+    const ring   = isYou
+      ? `<circle cx="${cx}" cy="${cy}" r="${SEAT_R+5}" fill="none" stroke="#0A0A0A" stroke-width="0.8" stroke-dasharray="3 2.5"/>`
+      : '';
+    return `${ring}
+      <circle cx="${cx}" cy="${cy}" r="${SEAT_R}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+        fill="${tf}" font-family="Inter,sans-serif" font-size="${FONT_SZ}" font-weight="${fw}">${initials}</text>`;
+  }).join('');
+
+  return `<svg width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}" aria-hidden="true">
+    <circle cx="${CX}" cy="${CY}" r="${TABLE_R}" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="1.5"/>
+    <circle cx="${CX}" cy="${CY}" r="${TABLE_R-8}" fill="none" stroke="#0A0A0A" stroke-width="0.6" stroke-dasharray="2 2"/>
+    ${svgSeats}
+  </svg>`;
+}
+
+// ── SUGGESTIONS ───────────────────────────────────────────────────────────────
+function renderSuggestions(query) {
+  const matches = getSuggestions(query);
+  if (!matches.length) { closeSuggestions(); return; }
+  const q = norm(query);
+  suggestionsEl.innerHTML = matches.map(name => {
+    const ln  = norm(name);
+    const idx = ln.indexOf(q);
+    const hl  = idx<0 ? name :
+      name.slice(0,idx)+`<mark>${name.slice(idx,idx+q.length)}</mark>`+name.slice(idx+q.length);
+    return `<div class="sug-item" role="option" data-name="${name}">${hl}</div>`;
+  }).join('');
+  suggestionsEl.classList.add('open');
+  suggestionsEl.querySelectorAll('.sug-item').forEach(item => {
+    item.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const n = item.dataset.name;
+      searchInput.value = n;
+      clearBtn.classList.add('visible');
+      closeSuggestions();
+      doSearch(n);
+    });
+  });
+}
+function closeSuggestions() { suggestionsEl.classList.remove('open'); suggestionsEl.innerHTML=''; }
+
+// ── SEARCH ORCHESTRATION ──────────────────────────────────────────────────────
+function doSearch(query) {
+  if (!dataReady) return;
+  const q = query.trim();
+  if (!q) { showState('Idle'); closeSuggestions(); return; }
+  const match = findMatch(q);
+  if (match) { closeSuggestions(); renderResult(match); }
+  else { showState('NotFound'); renderSuggestions(q); }
+}
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+let debounce;
+searchInput.addEventListener('input', e => {
+  const v = e.target.value;
+  clearBtn.classList.toggle('visible', v.length > 0);
+  clearTimeout(debounce);
+  debounce = setTimeout(() => doSearch(v), 160);
+});
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchInput.value = ''; clearBtn.classList.remove('visible');
+    closeSuggestions(); showState('Idle');
+  }
+});
+clearBtn.addEventListener('click', () => {
+  searchInput.value = ''; clearBtn.classList.remove('visible');
+  closeSuggestions(); showState('Idle'); searchInput.focus();
+});
+document.addEventListener('click', e => {
+  if (!suggestionsEl.contains(e.target) && e.target !== searchInput) closeSuggestions();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
