@@ -46,7 +46,7 @@
       pointer-events: none;
     }
 
-    .container { width: 100%; max-width: 520px; position: relative; z-index: 1; padding: 0 1.25rem 3rem; }
+    .container { width: 100%; max-width: 520px; position: relative; z-index: 1; padding: 0 1.25rem 5rem; }
     .container > header { margin-left: -1.25rem; margin-right: -1.25rem; }
 
     /* ── HEADER (black) ──────────────────────────────────────────────────────── */
@@ -341,25 +341,31 @@
       border-radius: 3px; font-size: 0.9em; color: var(--black);
     }
 
-    /* ── FOOTER (black strip — mirrors header) ───────────────────────────────── */
+    /* ── FOOTER (fixed — always onscreen) ───────────────────────────────────── */
     footer {
-      width: calc(100% + 2.5rem);
-      margin-left: -1.25rem;
-      margin-right: -1.25rem;
-      margin-top: 3rem;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
       background: var(--black);
       color: rgba(255,255,255,0.32);
-      padding: 1.75rem 2rem;
+      padding: 0.9rem 2rem 0.85rem;
       text-align: center;
       font-size: 0.62rem;
       letter-spacing: 0.18em;
     }
     .footer-orn {
-      display: block;
-      margin-bottom: 0.55rem;
+      display: inline;
+      margin-right: 0.5em;
       color: rgba(255,255,255,0.16);
       font-size: 0.48rem;
       letter-spacing: 0.45em;
+    }
+    .updated-at {
+      display: block;
+      margin-top: 0.3rem;
+      font-size: 0.5rem;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.14em;
     }
 
     @media (max-width: 520px) {
@@ -373,7 +379,7 @@
       #tableSubLabel { font-size: 0.52rem; letter-spacing: 0.2em; }
       .card-body { padding: 1.25rem 1.25rem; }
       #tableViz svg { width: 150px; height: 150px; }
-      footer { width: calc(100% + 1.75rem); margin-left: -0.875rem; margin-right: -0.875rem; }
+      footer { padding: 0.75rem 1rem 0.7rem; font-size: 0.58rem; }
     }
 
     @media (max-width: 360px) {
@@ -479,6 +485,7 @@
   <footer>
     <span class="footer-orn">— ✦ —</span>
     With love, Yujin &amp; Maverick
+    <span id="updatedAt" class="updated-at">Updated Jun 22, 2026 · 3:26 PM</span>
   </footer>
 </div>
 
@@ -574,6 +581,13 @@ async function loadData() {
     allNames.sort((a,b) => a.localeCompare(b));
     dataReady = true;
     showState('Idle');
+
+    // // Stamp load time discreetly in footer
+    // const now = new Date();
+    // const stamp = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    //   + ' · ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    // const updEl = $('updatedAt');
+    // if (updEl) updEl.textContent = `Updated ${stamp}`;
   } catch (err) {
     showError(
       err.message.startsWith('HTTP')
