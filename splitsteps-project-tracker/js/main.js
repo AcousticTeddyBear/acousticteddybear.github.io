@@ -47,6 +47,7 @@ function showTokenScreen(message) {
   refreshButton.disabled = false;
   resetDocs();
   resetFilters();
+  clearBrand();
   view.replaceChildren();
   view.dataset.tab = "";
   app.hidden = true;
@@ -74,6 +75,52 @@ refreshButton.addEventListener("click", () => {
 
 function onUnauthorized() {
   showTokenScreen(gh.MESSAGES.unauthorized);
+}
+
+// ---- Logo and favicon ------------------------------------------------------
+
+// These live in the private docs repo. Nothing from that repo may be copied
+// into this public one, so they are fetched with the token, like a doc's images.
+const brandSlot = $("tk-brand");
+const LOGO = "brand/assets/svg/splitsteps-lockup-dark.svg"; // for deep purple backgrounds
+const FAVICON = "brand/assets/favicon/favicon.svg";
+let brandUrls = [];
+let brandSeq = 0; // lets a late answer be ignored after the token is forgotten
+
+async function svgUrl(path) {
+  const bytes = await gh.fetchFileBytes(path);
+  const url = URL.createObjectURL(new Blob([bytes], { type: "image/svg+xml" }));
+  brandUrls.push(url);
+  return url;
+}
+
+function clearBrand() {
+  brandSeq++;
+  for (const url of brandUrls) URL.revokeObjectURL(url);
+  brandUrls = [];
+  brandSlot.textContent = "SplitSteps";
+  document.querySelector('link[rel="icon"]')?.remove();
+}
+
+// If either file fails, the page keeps the plain text name and the default icon.
+async function loadBrand() {
+  const seq = ++brandSeq;
+  const [logo, favicon] = await Promise.allSettled([svgUrl(LOGO), svgUrl(FAVICON)]);
+  if (seq !== brandSeq) return;
+  if (logo.status === "fulfilled") {
+    const img = new Image();
+    img.src = logo.value;
+    img.alt = "SplitSteps";
+    img.className = "logo";
+    brandSlot.replaceChildren(img);
+  }
+  if (favicon.status === "fulfilled") {
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    link.href = favicon.value;
+    document.head.append(link);
+  }
 }
 
 // ---- Loading ---------------------------------------------------------------
@@ -204,6 +251,7 @@ function startApp() {
   tokenScreen.hidden = true;
   app.hidden = false;
   measureTop();
+  loadBrand();
   loadAll();
 }
 

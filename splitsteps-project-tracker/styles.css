@@ -1,20 +1,47 @@
-/* SplitSteps tracker. Light theme, system font, one breakpoint at 768px. */
+/* SplitSteps Project Tracker. Light theme, brand colours and Outfit, one breakpoint at 768px. */
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("vendor/fonts/outfit-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("vendor/fonts/outfit-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("vendor/fonts/outfit-latin-700-normal.woff2") format("woff2");
+}
 
 :root {
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --text: #1c2128;
-  --muted: #576170;
-  --border: #d3d8de;
-  --head: #eceff3;
-  --link: #1a4fc4;
-  --warn-bg: #fff4d6;
-  --warn-border: #e0b84a;
-  --err-bg: #fde3e3;
-  --err-border: #d66;
+  /* Brand palette. Yellow is only ever used on deep purple. */
+  --brand-purple: #3a1c71;
+  --brand-yellow: #ffd60a;
+  --brand-purple-medium: #6b46c1;
+  --brand-offwhite: #fbf8f1;
+  --white: #ffffff;
+  /* State colours, for status chips, warnings and errors only. */
+  --state-danger: #b42318;
+  --state-warning: #8a5a00;
+  --state-success: #1b7f4b;
+  /* Tints of deep purple. */
+  --tint: #ebe8f1;
+  --border: #d8d2e3;
+
   --bar-h: 56px;
   /* Set from the script: the height of the sticky header on desktop. */
-  --top-measured: 96px;
+  --top-measured: 112px;
   --top-h: var(--top-measured);
   color-scheme: light;
 }
@@ -33,14 +60,19 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--brand-offwhite);
+  color: var(--brand-purple);
+  font: 16px/1.5 "Outfit", ui-sans-serif, system-ui, sans-serif;
   overflow-wrap: anywhere;
 }
 
 a {
-  color: var(--link);
+  color: var(--brand-purple-medium);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-purple-medium);
+  outline-offset: 2px;
 }
 
 h1,
@@ -48,10 +80,16 @@ h2,
 h3,
 h4 {
   line-height: 1.25;
+  font-weight: 600;
+}
+
+h1 {
+  font-weight: 700;
 }
 
 h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0 0 12px;
 }
 
@@ -62,8 +100,8 @@ h3 {
 
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.92em;
-  background: var(--head);
+  font-size: 0.9em;
+  background: var(--tint);
   padding: 1px 4px;
   border-radius: 4px;
 }
@@ -79,9 +117,10 @@ select {
 button {
   min-height: 36px;
   padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
+  border: 1px solid var(--brand-purple);
+  border-radius: 8px;
+  background: var(--white);
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -95,23 +134,38 @@ select {
   min-height: 36px;
   padding: 6px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 8px;
+  background: var(--white);
   max-width: 100%;
 }
 
 .muted,
-.loaded,
 .filter-count {
-  color: var(--muted);
+  color: var(--brand-purple-medium);
 }
 
 /* ---- Token screen ------------------------------------------------------- */
 
 .token-screen {
   max-width: 520px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  margin: 24px auto;
+  padding: 0 20px 24px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.token-screen h1 {
+  margin: 0 -20px 16px;
+  padding: 18px 20px;
+  background: var(--brand-purple);
+  color: var(--white);
+  font-size: 1.4rem;
+}
+
+.token-screen h2 {
+  font-size: 1.15rem;
 }
 
 .token-screen form {
@@ -121,16 +175,30 @@ select {
   margin: 16px 0 24px;
 }
 
+.token-screen label {
+  font-weight: 600;
+}
+
 .token-screen button {
   align-self: flex-start;
   min-height: 44px;
+  background: var(--brand-purple);
+  color: var(--white);
+}
+
+.token-screen .banner {
+  margin: 0 0 12px;
 }
 
 /* ---- Header and navigation ---------------------------------------------- */
 
 .top {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--brand-purple);
+  color: var(--white);
+}
+
+.top :focus-visible {
+  outline-color: var(--brand-yellow);
 }
 
 .app-header {
@@ -142,13 +210,41 @@ select {
 }
 
 .app-header h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px; /* keeps the logo's clear space */
+  min-height: 36px;
   margin: 0;
   font-size: 1.15rem;
   flex: 1 1 auto;
 }
 
+.product-name {
+  font-weight: 600;
+}
+
+/* The lockup, at a height that keeps it above the 24px minimum. */
+.logo {
+  display: block;
+  height: 36px;
+  width: auto;
+}
+
 .loaded {
   font-size: 0.9rem;
+}
+
+.app-header button {
+  background: transparent;
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.app-header #tk-refresh {
+  background: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+  color: var(--brand-purple);
 }
 
 .tabs {
@@ -158,15 +254,15 @@ select {
 
 .tabs a {
   padding: 10px 14px;
-  color: var(--text);
+  color: var(--white);
   text-decoration: none;
   border-bottom: 3px solid transparent;
 }
 
 .tabs a[aria-current="page"] {
-  border-bottom-color: var(--link);
+  border-bottom-color: var(--brand-yellow);
+  color: var(--brand-yellow);
   font-weight: 600;
-  color: var(--link);
 }
 
 .content {
@@ -179,18 +275,22 @@ select {
 .warning {
   margin: 12px 16px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: var(--white);
 }
 
 .banner {
-  background: var(--err-bg);
-  border: 1px solid var(--err-border);
+  border: 1px solid var(--state-danger);
+  color: var(--state-danger);
 }
 
 .warning {
   margin: 0 0 8px;
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-border);
+  border: 1px solid var(--state-warning);
+}
+
+.warning strong {
+  color: var(--state-warning);
 }
 
 .warnings {
@@ -206,39 +306,51 @@ select {
   font-size: 0.85rem;
   font-weight: 600;
   white-space: normal;
+  color: var(--white);
 }
 
-.badge-green {
-  background: #d5f0dc;
-  color: #11522a;
+.badge-success {
+  background: var(--state-success);
 }
 
-.badge-blue {
-  background: #d9e6fb;
-  color: #17418f;
+.badge-progress {
+  background: var(--brand-purple-medium);
 }
 
-.badge-amber {
-  background: #fbe6b0;
-  color: #6a4400;
+.badge-warning {
+  background: var(--state-warning);
 }
 
-.badge-red {
-  background: #fbd6d6;
-  color: #8a1c1c;
+.badge-danger {
+  background: var(--state-danger);
 }
 
-.badge-grey {
-  background: #e4e7eb;
-  color: #3a424c;
+.badge-neutral {
+  background: var(--tint);
+  color: var(--brand-purple);
 }
 
 /* ---- Overview ----------------------------------------------------------- */
 
+.current-phase {
+  background: var(--brand-purple);
+  color: var(--white);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.current-phase h3 {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+}
+
 .big {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 0 0 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+  color: var(--brand-yellow);
 }
 
 .count-grid {
@@ -249,9 +361,9 @@ select {
 }
 
 .count-group {
-  background: var(--surface);
+  background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 12px 14px;
 }
 
@@ -266,11 +378,15 @@ select {
   justify-content: space-between;
   gap: 12px;
   padding: 3px 0;
-  border-bottom: 1px solid var(--head);
+  border-bottom: 1px solid var(--tint);
 }
 
 .counts li:last-child {
   border-bottom: 0;
+}
+
+.counts strong {
+  font-weight: 600;
 }
 
 .commits {
@@ -285,8 +401,7 @@ select {
 }
 
 .commit-date {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  color: var(--brand-purple-medium);
   margin-right: 6px;
 }
 
@@ -309,14 +424,14 @@ select {
 
 .filter label {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--brand-purple-medium);
 }
 
 .data-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: var(--surface);
+  background: var(--white);
   border: 1px solid var(--border);
 }
 
@@ -324,10 +439,11 @@ select {
   position: sticky;
   top: var(--top-h);
   z-index: 1;
-  background: var(--head);
+  background: var(--tint);
+  font-weight: 600;
   text-align: left;
   padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--brand-purple);
 }
 
 .data-table td {
@@ -348,7 +464,7 @@ select {
 .detail-block h4 {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--brand-purple-medium);
   text-transform: uppercase;
 }
 
@@ -374,16 +490,16 @@ select {
   top: calc(var(--top-h) + 12px);
   max-height: calc(100vh - var(--top-h) - 24px);
   overflow: auto;
-  background: var(--surface);
+  background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px 12px;
 }
 
 .doc-sidebar h3 {
   margin: 12px 0 4px;
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--brand-purple-medium);
   text-transform: uppercase;
 }
 
@@ -396,21 +512,23 @@ select {
 .doc-sidebar a {
   display: block;
   padding: 3px 6px;
-  border-radius: 4px;
+  border-radius: 6px;
+  color: var(--brand-purple);
   text-decoration: none;
 }
 
 .doc-sidebar a[aria-current="page"] {
-  background: #d9e6fb;
+  background: var(--brand-purple);
+  color: var(--white);
   font-weight: 600;
 }
 
 .doc {
   max-width: 75ch;
   min-width: 0;
-  background: var(--surface);
+  background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px 20px 20px;
 }
 
@@ -424,15 +542,15 @@ select {
 }
 
 .doc img.img-failed {
-  color: var(--muted);
+  color: var(--brand-purple-medium);
 }
 
 .doc pre {
   overflow: auto;
   max-width: 100%;
   padding: 12px;
-  background: var(--head);
-  border-radius: 6px;
+  background: var(--tint);
+  border-radius: 8px;
   overflow-wrap: normal;
 }
 
@@ -459,14 +577,15 @@ select {
 }
 
 .doc th {
-  background: var(--head);
+  background: var(--tint);
+  font-weight: 600;
 }
 
 .doc blockquote {
   margin: 12px 0;
   padding: 0 14px;
-  border-left: 4px solid var(--border);
-  color: var(--muted);
+  border-left: 4px solid var(--brand-purple-medium);
+  color: var(--brand-purple-medium);
 }
 
 /* ---- Desktop (768px and wider) ------------------------------------------ */
@@ -491,15 +610,11 @@ select {
   }
 
   .token-screen {
-    padding-bottom: 24px;
-  }
-
-  .top {
-    border-bottom: 0;
+    margin: 16px;
   }
 
   .app-header {
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
   }
 
   .tabs {
@@ -509,14 +624,14 @@ select {
     bottom: 0;
     z-index: 20;
     padding: 0 0 env(safe-area-inset-bottom, 0px);
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    background: var(--brand-purple);
   }
 
   .tabs a {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 1 1 auto;
     min-height: var(--bar-h);
+    white-space: nowrap;
+    overflow-wrap: normal;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -528,7 +643,7 @@ select {
   }
 
   .tabs a[aria-current="page"] {
-    border-top-color: var(--link);
+    border-top-color: var(--brand-yellow);
   }
 
   button,
@@ -576,9 +691,9 @@ select {
   }
 
   .data-table tr {
-    background: var(--surface);
+    background: var(--white);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     margin: 0 0 12px;
     padding: 6px 12px;
   }
@@ -598,7 +713,7 @@ select {
     display: block;
     font-size: 12px;
     font-weight: 600;
-    color: var(--muted);
+    color: var(--brand-purple-medium);
     text-transform: uppercase;
   }
 

@@ -36,21 +36,21 @@ function warningList(list) {
 // ---- Status badges ---------------------------------------------------------
 
 const BADGE_COLOUR = {
-  Done: "green",
-  Resolved: "green",
-  "In progress": "blue",
-  "Done (docs)": "blue",
-  "Awaiting sign-off": "amber",
-  "Partly done": "amber",
-  Issue: "red",
+  Done: "success",
+  Resolved: "success",
+  "In progress": "progress",
+  "Done (docs)": "progress",
+  "Awaiting sign-off": "warning",
+  "Partly done": "warning",
+  Issue: "danger",
 };
 
-// A value outside the allowed list is red. "Open" is red for an issue and grey for a check.
+// A value outside the allowed list is danger. "Open" is danger for an issue and neutral for a check.
 function badge(value, allowed, { issue = false } = {}) {
   if (!value) return null;
-  let colour = "grey";
-  if (!allowed.includes(value)) colour = "red";
-  else if (value === "Open" && issue) colour = "red";
+  let colour = "neutral";
+  if (!allowed.includes(value)) colour = "danger";
+  else if (value === "Open" && issue) colour = "danger";
   else if (BADGE_COLOUR[value]) colour = BADGE_COLOUR[value];
   return el("span", { class: `badge badge-${colour}` }, value);
 }
