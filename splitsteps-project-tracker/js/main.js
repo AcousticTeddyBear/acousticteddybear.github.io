@@ -257,3 +257,6 @@ function startApp() {
 
 if (gh.getToken()) startApp();
 else showTokenScreen("");
+
+// The page works without this, so a failed registration is ignored.
+navigator.serviceWorker?.register("sw.js").catch(() => {});
