@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SplitSteps tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <section id="tk-token-screen" class="token-screen" hidden>
+    <h1>SplitSteps tracker</h1>
+    <p>Paste a GitHub token that can read the docs. It stays in this browser.</p>
+    <p id="tk-token-message" class="banner" role="alert" hidden></p>
+    <form id="tk-token-form" autocomplete="off">
+      <label for="tk-token-input">GitHub token</label>
+      <input id="tk-token-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+      <button type="submit">Save</button>
+    </form>
+    <h2>How to get a token</h2>
+    <ol>
+      <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">https://github.com/settings/personal-access-tokens/new</a>.</li>
+      <li>Set the resource owner to <code>AcousticTeddyBear</code>, and choose only the <code>splitsteps-docs</code> repository.</li>
+      <li>Under Repository permissions, set <strong>Contents</strong> to <strong>Read-only</strong>.</li>
+      <li>Generate the token and paste it here.</li>
+    </ol>
+  </section>
+
+  <div id="tk-app" hidden>
+    <div class="top" id="tk-top">
+      <header class="app-header">
+        <h1>SplitSteps tracker</h1>
+        <span id="tk-loaded" class="loaded"></span>
+        <button type="button" id="tk-refresh">Refresh</button>
+        <button type="button" id="tk-forget">Forget token</button>
+      </header>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#/overview" data-tab="overview">Overview</a>
+        <a href="#/phases" data-tab="phases">Phases</a>
+        <a href="#/issues" data-tab="issues">Issues</a>
+        <a href="#/checks" data-tab="checks">Checks</a>
+        <a href="#/features" data-tab="features">Features</a>
+        <a href="#/docs" data-tab="docs">Docs</a>
+      </nav>
+    </div>
+    <p id="tk-banner" class="banner" role="alert" hidden></p>
+    <main id="tk-view" class="content"></main>
+  </div>
+</body>
+</html>
