@@ -86,6 +86,18 @@ export function linkTarget(cell) {
   return m[1];
 }
 
+// A phase spec's goal: the text after "**Goal:**" at the start of a line,
+// without Markdown and with a capital first letter. null when there's none.
+export function parseGoal(text) {
+  const line = splitLines(text).find((l) => l.startsWith("**Goal:**"));
+  const goal = line ? clean(line.slice("**Goal:**".length)) : "";
+  return goal ? goal[0].toUpperCase() + goal.slice(1) : null;
+}
+
+// The phases a check's free-text Phase cell names, lowercased:
+// "0 (docs), 3 (wake time)" gives 0 and 3, and "8b" stays "8b".
+export const phasesNamed = (cell) => new Set((cell.match(/\b\d+[a-z]?\b/gi) || []).map((s) => s.toLowerCase()));
+
 const quote = (s) => `"${s}"`;
 
 // Reads one table. Returns { rows, warnings }. rows is null when the table

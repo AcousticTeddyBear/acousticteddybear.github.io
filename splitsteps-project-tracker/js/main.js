@@ -1,17 +1,19 @@
 // Startup, the token screen, and routing from the URL hash.
 
 import * as gh from "./github.js";
-import { parseSource } from "./parse.js";
+import { parseGoal, parseSource } from "./parse.js";
 import {
   loadingNode,
+  phasePlan,
   renderChecks,
   renderFeatures,
   renderIssues,
   renderOverview,
   renderPhases,
   resetFilters,
+  specPath,
 } from "./tabs.js";
-import { renderDocs, resetDocs } from "./docs.js";
+import { rememberDoc, renderDocs, resetDocs } from "./docs.js";
 
 const $ = (id) => document.getElementById(id);
 const tokenScreen = $("tk-token-screen");
@@ -132,6 +134,33 @@ function showBanner(messages) {
 
 const kindOf = (err) => (err instanceof gh.ApiError ? err.kind : "other");
 
+// The specs of the phases Insights shows, for their goals. Never rejects:
+// returns [path, { text } or { error }] pairs.
+async function loadPhaseSpecs(readmeText) {
+  const { rows } = parseSource("phases", { text: readmeText });
+  if (!rows) return [];
+  const { done, current, next } = phasePlan(rows);
+  const paths = [...new Set([...done, current, ...next].filter(Boolean).map(specPath).filter(Boolean))];
+  const settled = await Promise.allSettled(paths.map((p) => gh.fetchFile(p)));
+  return paths.map((p, i) => [p, settled[i].status === "fulfilled" ? { text: settled[i].value } : { error: settled[i].reason }]);
+}
+
+function goalsFrom(specs) {
+  const byPath = new Map();
+  const warnings = [];
+  for (const [path, spec] of specs) {
+    if (spec.error) {
+      warnings.push(`${path}: couldn't be loaded (${gh.reasonText(spec.error)}), so its goal isn't shown.`);
+      continue;
+    }
+    rememberDoc(path, spec.text);
+    const goal = parseGoal(spec.text);
+    if (goal) byPath.set(path, goal);
+    else warnings.push(`${path}: there is no "**Goal:**" line, so its goal isn't shown.`);
+  }
+  return { byPath, warnings };
+}
+
 async function loadAll() {
   const seq = ++loadSeq;
   loading = true;
@@ -141,21 +170,25 @@ async function loadAll() {
   showBanner([]);
   render();
 
+  const readmeRequest = gh.fetchFile("README.md");
+  const specsRequest = readmeRequest.then(loadPhaseSpecs, () => []);
   const results = await Promise.allSettled([
-    gh.fetchFile("README.md"),
+    readmeRequest,
     gh.fetchFile("specs/issues.md"),
     gh.fetchFile("specs/open-checks.md"),
     gh.fetchFile("product/feature-tracker.md"),
     gh.fetchDocList(),
     gh.fetchCommits(),
   ]);
+  const specs = await specsRequest;
   if (seq !== loadSeq) return;
 
   loading = false;
   refreshButton.disabled = false;
 
   const errors = results.filter((r) => r.status === "rejected").map((r) => r.reason);
-  if (errors.some((e) => kindOf(e) === "unauthorized")) return onUnauthorized();
+  const specErrors = specs.filter(([, s]) => s.error).map(([, s]) => s.error);
+  if ([...errors, ...specErrors].some((e) => kindOf(e) === "unauthorized")) return onUnauthorized();
   if (errors.length === results.length && errors.every((e) => kindOf(e) === "denied")) {
     return showTokenScreen(gh.MESSAGES.cantRead);
   }
@@ -174,6 +207,7 @@ async function loadAll() {
     issues: parseSource("issues", outcome(issues)),
     checks: parseSource("checks", outcome(checks)),
     features: parseSource("features", outcome(features)),
+    goals: goalsFrom(specs),
     docs:
       tree.status === "fulfilled"
         ? { paths: tree.value, error: null }

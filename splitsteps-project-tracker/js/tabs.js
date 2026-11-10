@@ -2,7 +2,7 @@
 // All text goes in with textContent (via el), never innerHTML, so nothing in
 // the docs can run as code on a page that holds a token.
 
-import { ALLOWED, linkTarget } from "./parse.js";
+import { ALLOWED, linkTarget, phasesNamed } from "./parse.js";
 import { docHash } from "./docs.js";
 
 // ---- Small DOM helpers -----------------------------------------------------
@@ -178,14 +178,155 @@ function countGroup(title, rows, field, allowed) {
   );
 }
 
-function currentPhase(phases) {
-  if (!phases.rows) return "Not available";
-  const open = phases.rows.find((r) => r.cells.Status !== "Done" && r.cells.Status !== "Dropped");
-  return open ? `${open.cells.Phase} ${open.cells.Name}` : "All phases finished";
+// ---- Insights --------------------------------------------------------------
+
+const isClosed = (r) => r.cells.Status === "Done" || r.cells.Status === "Dropped";
+
+// The phases Insights shows: done (newest first), the current one, and the next two.
+export function phasePlan(rows) {
+  const at = rows.findIndex((r) => !isClosed(r));
+  return {
+    done: rows.filter((r) => r.cells.Status === "Done").reverse(),
+    current: at < 0 ? null : rows[at],
+    next: at < 0 ? [] : rows.slice(at + 1).filter((r) => !isClosed(r)).slice(0, 2),
+  };
 }
 
+// The repo path of a phase's spec, from the Name cell's link.
+export function specPath(row) {
+  const target = linkTarget(row.raw.Name);
+  return target ? target.split("#")[0] : null;
+}
+
+const goalOf = (model, row) => model.goals.byPath.get(specPath(row)) || null;
+
+function tile(label, value, { tone, small, link } = {}) {
+  return el(
+    "div",
+    { class: "tile" },
+    el("span", { class: "tile-label" }, label),
+    el("strong", { class: `tile-value${small ? " tile-text" : ""}${tone ? ` tone-${tone}` : ""}` }, value),
+    link ? el("a", { href: link.href }, link.text) : null,
+  );
+}
+
+const notLoaded = (label) => tile(label, "Not loaded");
+
+function issuesTile(issues) {
+  if (!issues.rows) return notLoaded("Open issues");
+  const open = issues.rows.filter((r) => r.cells.Status === "Open").length;
+  const resolved = issues.rows.filter((r) => r.cells.Status === "Resolved").length;
+  return tile("Open issues", String(open), {
+    tone: open ? "danger" : "success",
+    link: { href: "#/issues", text: `${resolved} resolved` },
+  });
+}
+
+function checksTile(checks, current) {
+  const label = `Checks for Phase ${current.cells.Phase}`;
+  if (!checks.rows) return notLoaded(label);
+  const phase = current.cells.Phase.toLowerCase();
+  const open = checks.rows.filter(
+    (r) => (r.cells.Status === "Open" || r.cells.Status === "Partly done") && phasesNamed(r.cells.Phase).has(phase),
+  );
+  return open.length
+    ? tile(label, `${open.length} not done`, {
+        tone: "warning",
+        link: { href: "#/checks", text: open.map((r) => r.cells["#"]).join(", ") },
+      })
+    : tile(label, "None open", { tone: "success", link: { href: "#/checks", text: "All checks" } });
+}
+
+function lastChangeTile(commits) {
+  const latest = commits.list && commits.list[0];
+  if (!latest) return notLoaded("Last change");
+  return tile(`Last change · ${latest.date}`, latest.message, { small: true });
+}
+
+function phaseLines(model, rows, badgeFor) {
+  return el(
+    "ul",
+    { class: "phase-lines" },
+    rows.map((row, i) => {
+      const goal = goalOf(model, row);
+      return el("li", {}, badgeFor(row, i), el("span", {}, phaseLink(row), goal ? ` · ${goal}` : ""));
+    }),
+  );
+}
+
+function whereWeAre(model) {
+  const card = (...kids) => el("section", { class: "insight-card where" }, el("h3", {}, "Where we are"), ...kids);
+  const rows = model.phases.rows;
+  if (!rows) return card(el("p", { class: "muted" }, "Not loaded."));
+  const { current } = phasePlan(rows);
+  const done = rows.filter((r) => r.cells.Status === "Done").length;
+  const counted = rows.filter((r) => r.cells.Status !== "Dropped").length;
+  const pct = counted ? Math.round((done / counted) * 100) : 0;
+  const goal = current && goalOf(model, current);
+
+  return card(
+    current
+      ? el(
+          "p",
+          { class: "where-now" },
+          el("span", { class: "where-phase" }, phaseLink(current, `Phase ${current.cells.Phase} · ${current.cells.Name}`)),
+          badge(current.cells.Status, ALLOWED.phaseStatus),
+          current.cells.Updated ? el("span", { class: "muted" }, `since ${current.cells.Updated}`) : null,
+        )
+      : el("p", { class: "where-now" }, el("span", { class: "where-phase" }, "All phases finished")),
+    goal ? el("p", { class: "goal" }, goal) : null,
+    el(
+      "div",
+      { class: "progress" },
+      el(
+        "div",
+        {
+          class: "progress-bar",
+          role: "progressbar",
+          "aria-label": "Phases done",
+          "aria-valuemin": "0",
+          "aria-valuemax": String(counted),
+          "aria-valuenow": String(done),
+        },
+        el("span", { style: `width: ${pct}%` }),
+      ),
+      el("strong", {}, `${done} of ${counted} phases done`),
+    ),
+    el(
+      "div",
+      { class: "tiles" },
+      issuesTile(model.issues),
+      current ? checksTile(model.checks, current) : null,
+      lastChangeTile(model.commits),
+    ),
+  );
+}
+
+function canDoNow(model) {
+  const card = (...kids) => el("section", { class: "insight-card" }, el("h3", {}, "What the app can do now"), ...kids);
+  const rows = model.phases.rows;
+  if (!rows) return card(el("p", { class: "muted" }, "Not loaded."));
+  const { done, next } = phasePlan(rows);
+  const features = model.features.rows;
+  const built = features ? features.filter((r) => r.cells["Build status"] === "Done").length : 0;
+  const tag = (text, colour) => el("span", { class: `badge badge-${colour}` }, text);
+
+  return card(
+    done.length
+      ? phaseLines(model, done, () => tag("Done", "success"))
+      : el("p", { class: "muted" }, "Nothing finished yet."),
+    next.length ? el("h4", {}, "Coming next") : null,
+    next.length ? phaseLines(model, next, (_, i) => tag(i === 0 ? "Next" : "Then", "neutral")) : null,
+    features
+      ? el("p", { class: "after-mvp" }, `After the MVP: ${features.length} features planned, ${built} built.`)
+      : null,
+  );
+}
+
+// ---- Overview --------------------------------------------------------------
+
 export function renderOverview(model) {
-  const all = [model.phases, model.issues, model.checks, model.features].flatMap((d) => d.warnings);
+  const all = [model.phases, model.issues, model.checks, model.features, model.goals].flatMap((d) => d.warnings);
   const changes = model.commits.list
     ? model.commits.list.length
       ? el(
@@ -200,7 +341,7 @@ export function renderOverview(model) {
     {},
     el("h2", {}, "Overview"),
     warningList(all),
-    el("section", { class: "current-phase" }, el("h3", {}, "Current phase"), el("p", { class: "big" }, currentPhase(model.phases))),
+    el("div", { class: "insights" }, whereWeAre(model), canDoNow(model)),
     el(
       "div",
       { class: "count-grid" },
@@ -216,8 +357,8 @@ export function renderOverview(model) {
 
 // ---- Phases ----------------------------------------------------------------
 
-function phaseLink(row) {
-  const title = `${row.cells.Phase} ${row.cells.Name}`.trim();
+function phaseLink(row, text) {
+  const title = text || `${row.cells.Phase} ${row.cells.Name}`.trim();
   const target = linkTarget(row.raw.Name);
   if (!target) return title;
   const [path, heading] = target.split("#");

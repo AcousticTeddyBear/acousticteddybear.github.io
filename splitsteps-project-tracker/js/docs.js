@@ -41,6 +41,11 @@ let renderId = 0; // lets a late answer for an old doc be ignored
 let layout = null; // the page's parts, from buildLayout
 let scrollWatch = { until: 0, h: "", moved: false };
 
+// A doc fetched elsewhere (a phase spec for Insights), so opening it needs no request.
+export function rememberDoc(path, text) {
+  textCache.set(path, text);
+}
+
 export function resetDocs() {
   textCache.clear();
   revokeImages();

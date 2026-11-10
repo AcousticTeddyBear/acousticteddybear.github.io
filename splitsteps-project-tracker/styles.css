@@ -333,25 +333,152 @@ select {
 
 /* ---- Overview ----------------------------------------------------------- */
 
-.current-phase {
-  background: var(--brand-purple);
-  color: var(--white);
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 20px;
+/* Insights: where we are, and what the app can do now. */
+.insights {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.current-phase h3 {
-  margin: 0 0 2px;
+.insight-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-width: 0;
+}
+
+.insight-card.where {
+  border: 2px solid var(--brand-purple-medium);
+}
+
+.insight-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.insight-card h4 {
+  margin: 14px 0 2px;
   font-size: 0.95rem;
 }
 
-.big {
-  font-size: 1.5rem;
+.where-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.where-phase {
+  font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.25;
+}
+
+.where-phase a {
+  color: var(--brand-purple);
+}
+
+.goal {
+  margin: 6px 0 0;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 10px;
+  background: var(--tint);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--state-success);
+}
+
+.progress strong {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  background: var(--tint-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.tile-label {
+  font-size: 0.85rem;
+}
+
+.tile-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tile-value.tile-text {
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.tone-success {
+  color: var(--state-success);
+}
+
+.tone-warning {
+  color: var(--state-warning);
+}
+
+.tone-danger {
+  color: var(--state-danger);
+}
+
+.phase-lines {
+  list-style: none;
   margin: 0;
-  color: var(--brand-yellow);
+  padding: 0;
+}
+
+.phase-lines li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--tint);
+}
+
+.phase-lines li:first-child {
+  border-top: 0;
+}
+
+.phase-lines .badge {
+  flex: none;
+  margin-top: 2px;
+}
+
+.after-mvp {
+  margin: 12px 0 0;
 }
 
 .count-grid {
@@ -825,8 +952,19 @@ select {
     padding: 16px;
   }
 
-  .count-grid {
+  .count-grid,
+  .tiles {
     grid-template-columns: 1fr;
+  }
+
+  .tile a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .insight-card {
+    padding: 12px 14px;
   }
 
   .filters {
