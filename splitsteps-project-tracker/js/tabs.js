@@ -64,42 +64,16 @@ export function resetFilters() {
   for (const key of Object.keys(filterState)) delete filterState[key];
 }
 
-// columns: [{ label, cell(row) }]. filters: [{ id, label, get(row), order }].
-// detail(row) returns a node shown under the row when its Details control is opened.
-function tableView({ key, columns, rows, filters = [], detail }) {
+// The filter dropdowns and `N of M` for a table or list. filters: [{ id, label, get(row), order }].
+// drawRows(rows) redraws with the rows that pass; it runs once now and on every change.
+function filtered({ key, rows, filters, drawRows }) {
   const state = (filterState[key] ||= {});
-  const tbody = el("tbody");
   const count = el("span", { class: "filter-count", "aria-live": "polite" });
 
   function draw() {
-    tbody.replaceChildren();
-    let shown = 0;
-    for (const row of rows) {
-      if (!filters.every((f) => !state[f.id] || state[f.id] === ALL || state[f.id] === f.get(row))) continue;
-      shown++;
-      const tr = el("tr");
-      for (const col of columns) {
-        tr.append(el("td", { dataset: { label: col.label } }, col.cell(row)));
-      }
-      tbody.append(tr);
-      if (detail) {
-        const panel = el("tr", { class: "detail", hidden: true }, el("td", { colspan: columns.length + 1 }, detail(row)));
-        const button = el(
-          "button",
-          { type: "button", "aria-expanded": "false", class: "details-button" },
-          "Details",
-        );
-        button.addEventListener("click", () => {
-          const open = panel.hidden;
-          panel.hidden = !open;
-          button.setAttribute("aria-expanded", String(open));
-          button.textContent = open ? "Hide details" : "Details";
-        });
-        tr.append(el("td", {}, button));
-        tbody.append(panel);
-      }
-    }
-    count.textContent = `${shown} of ${rows.length}`;
+    const shown = rows.filter((row) => filters.every((f) => !state[f.id] || state[f.id] === ALL || state[f.id] === f.get(row)));
+    drawRows(shown);
+    count.textContent = `${shown.length} of ${rows.length}`;
   }
 
   const bar = filters.length
@@ -131,13 +105,49 @@ function tableView({ key, columns, rows, filters = [], detail }) {
       )
     : null;
 
+  draw();
+  return bar;
+}
+
+// columns: [{ label, cell(row) }]. filters: as for filtered().
+// detail(row) returns a node shown under the row when its Details control is opened.
+function tableView({ key, columns, rows, filters = [], detail }) {
+  const tbody = el("tbody");
+
+  function drawRows(shown) {
+    tbody.replaceChildren();
+    for (const row of shown) {
+      const tr = el("tr");
+      for (const col of columns) {
+        tr.append(el("td", { dataset: { label: col.label } }, col.cell(row)));
+      }
+      tbody.append(tr);
+      if (detail) {
+        const panel = el("tr", { class: "detail", hidden: true }, el("td", { colspan: columns.length + 1 }, detail(row)));
+        const button = el(
+          "button",
+          { type: "button", "aria-expanded": "false", class: "details-button" },
+          "Details",
+        );
+        button.addEventListener("click", () => {
+          const open = panel.hidden;
+          panel.hidden = !open;
+          button.setAttribute("aria-expanded", String(open));
+          button.textContent = open ? "Hide details" : "Details";
+        });
+        tr.append(el("td", {}, button));
+        tbody.append(panel);
+      }
+    }
+  }
+
+  const bar = filtered({ key, rows, filters, drawRows });
   const head = el(
     "tr",
     {},
     columns.map((c) => el("th", { scope: "col" }, c.label)),
     detail ? el("th", { scope: "col" }, "Details") : null,
   );
-  draw();
   return el(
     "div",
     { class: "table-view" },
@@ -468,31 +478,51 @@ export function renderChecks(model) {
 
 // ---- Features --------------------------------------------------------------
 
+const FEATURE_DETAILS = ["What it adds", "Group", "Commitment", "Build it when"];
+
+// One short row per feature. The row is a button; tapping it opens the rest under it.
+function featureItem(row, index) {
+  const id = `tk-feature-${index}`;
+  const details = el(
+    "dl",
+    { class: "feature-details", id, hidden: true },
+    FEATURE_DETAILS.flatMap((label) => [el("dt", {}, label), el("dd", {}, row.cells[label] || "—")]),
+  );
+  const tier = row.cells.Tier;
+  const button = el(
+    "button",
+    { type: "button", class: "feature-row", "aria-expanded": "false", "aria-controls": id },
+    el("span", { class: "feature-chevron", "aria-hidden": "true" }),
+    el("span", { class: "feature-name" }, row.cells.Feature || "(no name)"),
+    el(
+      "span",
+      { class: "feature-badges" },
+      tier ? el("span", { class: `badge badge-${ALLOWED.tier.includes(tier) ? "neutral" : "danger"}` }, tier) : null,
+      badge(row.cells["Build status"], ALLOWED.buildStatus),
+    ),
+  );
+  button.addEventListener("click", () => {
+    const open = details.hidden;
+    details.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+  });
+  return el("li", {}, button, details);
+}
+
 export function renderFeatures(model) {
   const d = model.features;
   const rows = d.rows || [];
-  return section(
-    "Features",
-    d,
-    rows.length
-      ? tableView({
-          key: "features",
-          rows,
-          columns: [
-            col("Feature"),
-            col("What it adds"),
-            col("Group"),
-            col("Commitment"),
-            col("Build it when"),
-            col("Tier"),
-            col("Build status", (r) => badge(r.cells["Build status"], ALLOWED.buildStatus)),
-          ],
-          filters: [
-            { id: "tier", label: "Tier", get: (r) => r.cells.Tier, order: ALLOWED.tier },
-            { id: "group", label: "Group", get: (r) => r.cells.Group },
-            { id: "build", label: "Build status", get: (r) => r.cells["Build status"], order: ALLOWED.buildStatus },
-          ],
-        })
-      : null,
-  );
+  if (!rows.length) return section("Features", d, null);
+  const list = el("ul", { class: "feature-list" });
+  const bar = filtered({
+    key: "features",
+    rows,
+    filters: [
+      { id: "tier", label: "Tier", get: (r) => r.cells.Tier, order: ALLOWED.tier },
+      { id: "group", label: "Group", get: (r) => r.cells.Group },
+      { id: "build", label: "Build status", get: (r) => r.cells["Build status"], order: ALLOWED.buildStatus },
+    ],
+    drawRows: (shown) => list.replaceChildren(...shown.map((r) => featureItem(r, rows.indexOf(r)))),
+  });
+  return section("Features", d, el("div", { class: "table-view" }, bar, list));
 }

@@ -606,6 +606,96 @@ select {
   margin: 0;
 }
 
+/* Features: one short row per feature; tapping it opens the rest. */
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+}
+
+.feature-list > li + li {
+  border-top: 1px solid var(--border);
+}
+
+.feature-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.feature-row:hover {
+  background: var(--tint-light);
+}
+
+.feature-row:focus-visible {
+  outline: 3px solid var(--brand-purple-medium);
+  outline-offset: -3px;
+}
+
+.feature-chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 2px;
+  border-right: 2px solid var(--brand-purple-medium);
+  border-bottom: 2px solid var(--brand-purple-medium);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+
+.feature-row[aria-expanded="true"] .feature-chevron {
+  transform: rotate(45deg);
+}
+
+.feature-name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.feature-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.feature-details {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+  padding: 2px 12px 14px 34px;
+}
+
+.feature-details[hidden] {
+  display: none;
+}
+
+.feature-details dt {
+  font-size: 0.85rem;
+  color: var(--brand-purple-medium);
+  padding-top: 1px;
+}
+
+.feature-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 /* ---- Docs --------------------------------------------------------------- */
 
 .docs {
@@ -980,6 +1070,16 @@ select {
 
   .filter select {
     width: 100%;
+  }
+
+  .feature-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding-left: 34px;
+  }
+
+  .feature-details dd + dt {
+    margin-top: 8px;
   }
 
   /* The same table, shown as one card per row. */
