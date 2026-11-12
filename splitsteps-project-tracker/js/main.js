@@ -139,8 +139,8 @@ const kindOf = (err) => (err instanceof gh.ApiError ? err.kind : "other");
 async function loadPhaseSpecs(readmeText) {
   const { rows } = parseSource("phases", { text: readmeText });
   if (!rows) return [];
-  const { done, current, next } = phasePlan(rows);
-  const paths = [...new Set([...done, current, ...next].filter(Boolean).map(specPath).filter(Boolean))];
+  const { done, open, next } = phasePlan(rows);
+  const paths = [...new Set([...done, ...open, ...next].map(specPath).filter(Boolean))];
   const settled = await Promise.allSettled(paths.map((p) => gh.fetchFile(p)));
   return paths.map((p, i) => [p, settled[i].status === "fulfilled" ? { text: settled[i].value } : { error: settled[i].reason }]);
 }

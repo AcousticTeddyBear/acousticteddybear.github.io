@@ -384,6 +384,12 @@ select {
   margin: 6px 0 0;
 }
 
+.where-item + .where-item {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tint);
+}
+
 .progress {
   display: flex;
   align-items: center;

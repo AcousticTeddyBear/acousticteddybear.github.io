@@ -181,15 +181,26 @@ function countGroup(title, rows, field, allowed) {
 // ---- Insights --------------------------------------------------------------
 
 const isClosed = (r) => r.cells.Status === "Done" || r.cells.Status === "Dropped";
+const isOpen = (r) => !isClosed(r) && r.cells.Status !== "Not started";
 
-// The phases Insights shows: done (newest first), the current one, and the next two.
+// The phases Insights shows: done (newest first), the open ones (several can be
+// open at once, like 5 and 5b), and the next two not started after the last open one.
+// With none open, the first phase that isn't closed stands in for them.
 export function phasePlan(rows) {
-  const at = rows.findIndex((r) => !isClosed(r));
+  let open = rows.filter(isOpen);
+  if (open.length === 0) open = rows.filter((r) => !isClosed(r)).slice(0, 1);
+  const after = open.length ? rows.indexOf(open[open.length - 1]) + 1 : rows.length;
   return {
     done: rows.filter((r) => r.cells.Status === "Done").reverse(),
-    current: at < 0 ? null : rows[at],
-    next: at < 0 ? [] : rows.slice(at + 1).filter((r) => !isClosed(r)).slice(0, 2),
+    open,
+    next: rows.slice(after).filter((r) => r.cells.Status === "Not started").slice(0, 2),
   };
+}
+
+// "5", "5 and 5b", "5, 5b and 6".
+function listPhases(open) {
+  const ids = open.map((r) => r.cells.Phase);
+  return ids.length < 2 ? ids.join("") : `${ids.slice(0, -1).join(", ")} and ${ids[ids.length - 1]}`;
 }
 
 // The repo path of a phase's spec, from the Name cell's link.
@@ -222,13 +233,15 @@ function issuesTile(issues) {
   });
 }
 
-function checksTile(checks, current) {
-  const label = `Checks for Phase ${current.cells.Phase}`;
+function checksTile(checks, phases) {
+  const label = `Checks for Phase${phases.length > 1 ? "s" : ""} ${listPhases(phases)}`;
   if (!checks.rows) return notLoaded(label);
-  const phase = current.cells.Phase.toLowerCase();
-  const open = checks.rows.filter(
-    (r) => (r.cells.Status === "Open" || r.cells.Status === "Partly done") && phasesNamed(r.cells.Phase).has(phase),
-  );
+  const wanted = phases.map((r) => r.cells.Phase.toLowerCase());
+  const open = checks.rows.filter((r) => {
+    if (r.cells.Status !== "Open" && r.cells.Status !== "Partly done") return false;
+    const named = phasesNamed(r.cells.Phase);
+    return wanted.some((p) => named.has(p));
+  });
   return open.length
     ? tile(label, `${open.length} not done`, {
         tone: "warning",
@@ -258,23 +271,31 @@ function whereWeAre(model) {
   const card = (...kids) => el("section", { class: "insight-card where" }, el("h3", {}, "Where we are"), ...kids);
   const rows = model.phases.rows;
   if (!rows) return card(el("p", { class: "muted" }, "Not loaded."));
-  const { current } = phasePlan(rows);
+  const { open } = phasePlan(rows);
   const done = rows.filter((r) => r.cells.Status === "Done").length;
   const counted = rows.filter((r) => r.cells.Status !== "Dropped").length;
   const pct = counted ? Math.round((done / counted) * 100) : 0;
-  const goal = current && goalOf(model, current);
+
+  const phaseBlock = (row) => {
+    const goal = goalOf(model, row);
+    return el(
+      "div",
+      { class: "where-item" },
+      el(
+        "p",
+        { class: "where-now" },
+        el("span", { class: "where-phase" }, phaseLink(row, `Phase ${row.cells.Phase} · ${row.cells.Name}`)),
+        badge(row.cells.Status, ALLOWED.phaseStatus),
+        row.cells.Updated ? el("span", { class: "muted" }, `since ${row.cells.Updated}`) : null,
+      ),
+      goal ? el("p", { class: "goal" }, goal) : null,
+    );
+  };
 
   return card(
-    current
-      ? el(
-          "p",
-          { class: "where-now" },
-          el("span", { class: "where-phase" }, phaseLink(current, `Phase ${current.cells.Phase} · ${current.cells.Name}`)),
-          badge(current.cells.Status, ALLOWED.phaseStatus),
-          current.cells.Updated ? el("span", { class: "muted" }, `since ${current.cells.Updated}`) : null,
-        )
+    open.length
+      ? open.map(phaseBlock)
       : el("p", { class: "where-now" }, el("span", { class: "where-phase" }, "All phases finished")),
-    goal ? el("p", { class: "goal" }, goal) : null,
     el(
       "div",
       { class: "progress" },
@@ -296,7 +317,7 @@ function whereWeAre(model) {
       "div",
       { class: "tiles" },
       issuesTile(model.issues),
-      current ? checksTile(model.checks, current) : null,
+      open.length ? checksTile(model.checks, open) : null,
       lastChangeTile(model.commits),
     ),
   );
